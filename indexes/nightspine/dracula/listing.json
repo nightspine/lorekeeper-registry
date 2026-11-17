@@ -1,0 +1,65 @@
+{
+ "lorekeeper": "0.1",
+ "kind": "listing",
+ "id": "nightspine/dracula",
+ "publisher": "nightspine",
+ "slug": "dracula",
+ "work": {
+  "title": "Dracula",
+  "authors": [
+   "Bram Stoker"
+  ],
+  "language": "en"
+ },
+ "editions": [
+  {
+   "textHash": "6211b79150ee12207b34736872d807d9074170062dbc03fee71075ef8a38f00d"
+  }
+ ],
+ "version": 1,
+ "digest": "sha256:50e86572ebbb26af6da2a968ed3661fe4d3953e4c9c86383d77eb4695ea37363",
+ "href": "/v0/indexes/nightspine/dracula/v1.lore.json",
+ "updated": "2026-11-17T23:27:19Z",
+ "complete": true,
+ "license": "CC0-1.0",
+ "edited": false,
+ "generator": {
+  "name": "lorekeeper-generate",
+  "version": "0.3.0",
+  "model": "claude-haiku-5-5",
+  "promptSet": "extract-v8"
+ },
+ "attestations": [
+  {
+   "kind": "validates",
+   "by": "registry",
+   "at": "2026-11-17T23:27:19Z"
+  },
+  {
+   "kind": "book-checks",
+   "by": "builder",
+   "at": "2026-11-17T23:27:17Z",
+   "textHash": "6211b79150ee12207b34736872d807d9074170062dbc03fee71075ef8a38f00d",
+   "anchors": 471,
+   "resolved": 471,
+   "errors": 0
+  },
+  {
+   "kind": "spoiler-gate",
+   "by": "builder",
+   "at": "2026-11-17T23:27:17Z",
+   "textHash": "6211b79150ee12207b34736872d807d9074170062dbc03fee71075ef8a38f00d",
+   "names": 149,
+   "found": 149,
+   "early": 0
+  }
+ ],
+ "versions": [
+  {
+   "version": 1,
+   "digest": "sha256:50e86572ebbb26af6da2a968ed3661fe4d3953e4c9c86383d77eb4695ea37363",
+   "href": "/v0/indexes/nightspine/dracula/v1.lore.json",
+   "updated": "2026-11-17T23:27:19Z"
+  }
+ ]
+}

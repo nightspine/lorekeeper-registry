@@ -1,0 +1,65 @@
+name: Share
+on:
+  issues:
+    types: [opened, edited, reopened]
+permissions:
+  contents: write
+  issues: write
+concurrency:
+  group: registry-write
+  cancel-in-progress: false
+jobs:
+  add:
+    if: contains(github.event.issue.labels.*.name, 'share') && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    env:
+      BODY: ${{ github.event.issue.body }}
+      PUBLISHER: ${{ github.event.issue.user.login }}
+      ISSUE: ${{ github.event.issue.number }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Fetch the bundle
+        id: fetch
+        run: |
+          # The issue body is untrusted: take only a GitHub attachment URL of a .json file, nothing else.
+          url=$(printf '%s' "$BODY" | grep -oE 'https://github\.com/user-attachments/files/[0-9]+/[A-Za-z0-9._-]+\.json' | head -n 1 || true)
+          if [ -z "$url" ]; then
+            echo "No bundle file was attached. Edit the issue and drag the .json bundle into the box." > result.txt
+            echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if ! curl -fsSL --max-filesize 5242880 --max-time 60 -o "$RUNNER_TEMP/bundle.json" "$url"; then
+            echo "The attached file could not be downloaded, or it is larger than 5 MB." > result.txt
+            echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+      - name: Check and file it
+        id: add
+        if: steps.fetch.outputs.ok == 'true'
+        run: |
+          if uvx --from "git+https://github.com/nightspine/lorekeeper@main" lorekeeper registry add "$RUNNER_TEMP/bundle.json" --publisher "$PUBLISHER" --source . > result.txt 2>&1; then
+            git config user.name "lorekeeper-registry"
+            git config user.email "registry@users.noreply.github.com"
+            git add indexes
+            git commit -q -m "feat: index shared in #$ISSUE"
+            git push
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Report
+        run: |
+          {
+            if [ "${{ steps.add.outputs.ok }}" = "true" ]; then
+              echo "Filed. It shows up in the app once the site rebuilds, usually within a few minutes."
+            else
+              echo "This could not be added:"
+            fi
+            echo
+            echo '```'
+            head -c 6000 result.txt
+            echo '```'
+          } > comment.md
+          gh issue comment "$ISSUE" --body-file comment.md
+          if [ "${{ steps.add.outputs.ok }}" = "true" ]; then gh issue close "$ISSUE"; fi

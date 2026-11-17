@@ -1,0 +1,24 @@
+name: Share an index
+description: Add an index you built with Lorekeeper, or a new version of one you shared before.
+title: "Share: "
+labels: ["share"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        In Lorekeeper, choose **Share index** on a book (or run `lorekeeper share`). It checks the index and saves one bundle file. Attach that file below.
+        A robot checks it and files it under your GitHub name within a minute or two, then closes this issue with the result.
+  - type: textarea
+    id: bundle
+    attributes:
+      label: Bundle file
+      description: Drag the `.json` bundle here. Only the first attached file is read.
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Before you share
+      options:
+        - label: I built or edited this index, it contains no passages from the book, and I share it under the licence it names (CC0-1.0 or CC-BY-4.0).
+          required: true
