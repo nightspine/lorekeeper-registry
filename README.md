@@ -4,13 +4,13 @@ Spoiler-gated book indexes that people have built with [Lorekeeper](https://gith
 
 This repository is the registry. There is no server: indexes are JSON files, and a GitHub Action publishes them with a small lookup file per edition.
 
-**Status: being set up.** Submissions open when the first release of the registry tooling lands in Lorekeeper.
+The published registry is at https://nightspine.github.io/lorekeeper-registry/ and lists every shared index. To share one, use Share on a book in Lorekeeper 0.8.0 or later and attach the file it gives you to [a submission](https://github.com/nightspine/lorekeeper-registry/issues/new?template=share.yml).
 
 ## What is here
 
 - `indexes/<publisher>/<book>/` holds each shared index, one file per version, next to its listing record.
 - `TAKEDOWN.md` is the removal policy and the address for notices.
-- `removed.json` will log every removal with its date and reason.
+- `removed.json` logs every removal with its date and reason.
 
 ## What may be shared
 

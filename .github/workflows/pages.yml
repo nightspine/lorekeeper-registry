@@ -2,7 +2,7 @@ name: Publish
 on:
   push:
     branches: [main]
-    paths: ["indexes/**", "removed.json", ".github/workflows/pages.yml"]
+    paths: ["indexes/**", "removed.json", "site/**", ".github/workflows/pages.yml"]
   workflow_run:
     workflows: [Share]
     types: [completed]
@@ -21,6 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uvx --from "git+https://github.com/nightspine/lorekeeper@main" lorekeeper registry build . -o _site --base-path /lorekeeper-registry --name "Lorekeeper community registry"
+      - run: python3 site/make_index.py . _site
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
