@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lorekeeper community registry</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<main>
+<h1>Lorekeeper community registry</h1>
+<p>Spoiler-gated book indexes that people built with <a href="https://github.com/nightspine/lorekeeper">Lorekeeper</a> and chose to share. The app looks here when you open a book, so you rarely need this page: it is for seeing what exists.</p>
+<label for="q" class="dim">Find a book by title, author or who shared it</label>
+<input type="search" id="q" autocomplete="off" spellcheck="false">
+<p class="status" id="status" role="status">Loading…</p>
+<ul class="results" id="results"></ul>
+<button type="button" id="more" hidden>Show more</button>
+<h2>Share one</h2>
+<p>In Lorekeeper, open a book you built an index for and choose Share. It checks the index and gives you a file, which you attach to <a href="https://github.com/nightspine/lorekeeper-registry/issues/new?template=share.yml">a submission here</a>.</p>
+<h2>Problems and removals</h2>
+<p>Found a spoiler or a mistake? <a href="https://github.com/nightspine/lorekeeper-registry/issues">Open an issue</a>. For copyright concerns, read the <a href="https://github.com/nightspine/lorekeeper-registry/blob/main/TAKEDOWN.md">takedown policy</a>.</p>
+</main>
+<script>
+// Listing text is untrusted: everything goes in through textContent, and links are built from checked ids.
+const PAGE = 20, ID = /^[a-z0-9-]{1,39}\/[a-z0-9._-]{1,200}$/;
+const q = document.getElementById("q"), status = document.getElementById("status"), list = document.getElementById("results"), more = document.getElementById("more");
+let all = [], shown = PAGE;
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const fold = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase();
+function paint() {
+  const words = fold(q.value).split(/\s+/).filter(Boolean);
+  const hits = words.length ? all.filter((r) => words.every((w) => r.hay.includes(w))) : all;
+  list.replaceChildren(...hits.slice(0, shown).map((r) => {
+    const a = el("a");
+    a.href = `listing.html?id=${encodeURIComponent(r.id)}`;
+    a.append(el("span", "t", r.title), el("span", "meta", `${r.complete ? "Whole book" : "Partial"}, ${r.updated.slice(0, 10)}`),
+      el("span", "by", `${r.authors.join(", ") || "Unknown author"}. Shared by ${r.publisher}.`));
+    const li = el("li");
+    li.append(a);
+    return li;
+  }));
+  const n = hits.length, total = all.length;
+  status.textContent = !total ? "No indexes have been shared yet."
+    : words.length ? (n ? `${n.toLocaleString()} of ${total.toLocaleString()} indexes match.` : "Nothing matches. The book may not have been shared yet.")
+    : `${total.toLocaleString()} shared ${total === 1 ? "index" : "indexes"}, newest first.`;
+  more.hidden = n <= shown;
+}
+q.addEventListener("input", () => { shown = PAGE; paint(); });
+more.addEventListener("click", () => { shown += PAGE; paint(); });
+fetch("catalog.json").then((r) => { if (!r.ok) throw new Error(); return r.json(); }).then((c) => {
+  all = c.listings.filter((r) => ID.test(r.id)).map((r) => ({ ...r, hay: fold(`${r.title} ${r.authors.join(" ")} ${r.publisher}`) }));
+  paint();
+}).catch(() => { status.textContent = "The list could not be loaded. Try again in a minute."; });
+</script>
+</body>
+</html>

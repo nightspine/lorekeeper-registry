@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shared index · Lorekeeper community registry</title>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<main>
+<p class="crumb"><a href="./">All shared indexes</a></p>
+<div id="page"><p class="dim" role="status">Loading…</p></div>
+</main>
+<script>
+// Listing text is untrusted: everything goes in through textContent, and links are built from checked values.
+const ID = /^([a-z0-9-]{1,39})\/([a-z0-9._-]{1,200})$/, page = document.getElementById("page");
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const link = (href, text) => { const a = el("a", null, text); a.href = href; return a; };
+const say = (text) => page.replaceChildren(el("p", "dim", text));
+const day = (s) => String(s || "").slice(0, 10);
+const num = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
+const WHO = { registry: "this registry", builder: "the person who built it (self-reported)", reader: "a reader (self-reported)" };
+function vouch(a) {
+  const who = WHO[a.by] || "someone unknown";
+  if (a.kind === "validates") return `Follows the Lorekeeper format. Checked by ${who}.`;
+  if (a.kind === "book-checks") return `${num(a.resolved)} of ${num(a.anchors)} reveal points found in the book, ${num(a.errors)} quoting or anchor errors. Checked by ${who}.`;
+  if (a.kind === "spoiler-gate") return num(a.early) ? `${num(a.early)} of ${num(a.names)} names appear before the book first uses them. Checked by ${who}.` : `No name appears before the book first uses it (${num(a.names)} names). Checked by ${who}.`;
+  if (a.kind === "audit") return `${num(a.supported)} of ${num(a.supported) + num(a.unsupported)} sampled claims held up against the book. Checked by ${who}.`;
+  return null;
+}
+const m = ID.exec(new URLSearchParams(location.search).get("id") || "");
+if (!m) say("That address does not name a shared index.");
+else fetch(`v0/listings/${m[1]}/${m[2]}.json`).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }).then((l) => {
+  const work = l.work || {}, title = String(work.title || l.id);
+  document.title = `${title} · Lorekeeper community registry`;
+  const raw = (v) => `v0/indexes/${m[1]}/${m[2]}/v${v}.lore.json`;
+  const dl = el("dl");
+  const row = (k, v) => { if (v == null || v === "") return; const dd = el("dd"); dd.append(v); dl.append(el("dt", null, k), dd); };
+  row("Shared by", link(`https://github.com/${m[1]}`, m[1]));
+  row("Covers", l.complete ? "The whole book" : "Part of the book");
+  row("Language", work.language ? String(work.language) : null);
+  row("Licence", l.license ? String(l.license) : null);
+  row("Version", `${num(l.version)}, updated ${day(l.updated)}`);
+  const g = l.generator || {};
+  row("Made with", g.model ? `${String(g.model)}${l.edited ? ", then edited by hand" : ""}` : l.edited ? "Written or edited by hand" : null);
+  const checks = el("ul", "plain");
+  for (const a of l.attestations || []) { const t = vouch(a); if (t) checks.append(el("li", null, t)); }
+  const eds = el("ul", "plain");
+  for (const e of l.editions || []) if (e.textHash) { const li = el("li"); li.append(el("code", null, String(e.textHash))); eds.append(li); }
+  const vers = el("ul", "plain");
+  for (const v of [...(l.versions || [])].reverse()) {
+    if (!Number.isInteger(v.version) || v.version < 1) continue;
+    const li = el("li");
+    li.append(link(raw(v.version), `Version ${v.version} (JSON)`), `, ${day(v.updated)}, `, el("code", null, String(v.digest || "")));
+    vers.append(li);
+  }
+  const warn = el("p", "warn", "The raw file holds the whole index, so it spoils the entire book. The Lorekeeper app only ever shows the part up to where you are.");
+  const use = el("p");
+  use.append("To use it, open the book in Lorekeeper: with community indexes turned on, it is offered on the book's build page. ", link("https://github.com/nightspine/lorekeeper", "Get Lorekeeper"), ".");
+  const report = el("p");
+  report.append(link(`https://github.com/nightspine/lorekeeper-registry/issues/new?title=${encodeURIComponent(`Problem with ${m[1]}/${m[2]}`)}`, "Report a problem with this index"), ".");
+  page.replaceChildren(el("h1", null, title), el("p", "dim", (work.authors || []).map(String).join(", ") || "Unknown author"), dl,
+    el("h2", null, "How it was checked"), checks.children.length ? checks : el("p", "dim", "No checks are recorded."),
+    el("h2", null, "Use it"), use,
+    el("h2", null, "Raw index"), warn, vers,
+    el("h2", null, "Which copies it fits"), el("p", "dim", "An index fits a copy whose text has one of these fingerprints. The app works this out for you."), eds,
+    el("h2", null, "Something wrong?"), report);
+}).catch((e) => say(e.message === "404" ? "No index is shared at that address. It may have been removed." : "This index could not be loaded. Try again in a minute."));
+</script>
+</body>
+</html>
